@@ -1,161 +1,350 @@
 <template>
-  <!-- <Dialog
-    :style="{ width: '450px' }"
-    header="Product Details"
+  <Dialog
+    v-model:visible="show"
+    :style="{ width: '600px' }"
+    header="فرم"
     :modal="true"
     class="p-fluid"
-  > -->
-  <div class="p-field">
-    <label for="name">Name</label>
-    <InputText
-      id="name"
-      v-model.trim="product.name"
-      required="true"
-      autofocus
-      :class="{ 'p-invalid': submitted && !product.name }"
-    />
-    <small class="p-error" v-if="submitted && !product.name"
-      >Name is required.</small
-    >
-  </div>
-  <div class="p-field">
-    <label for="description">Description</label>
-    <Textarea
-      id="description"
-      v-model="product.description"
-      required="true"
-      rows="3"
-      cols="20"
-    />
-  </div>
-
-  <div class="p-field">
-    <label for="inventoryStatus" class="p-mb-3">Inventory Status</label>
-    <Dropdown
-      id="inventoryStatus"
-      v-model="product.inventoryStatus"
-      :options="statuses"
-      optionLabel="label"
-      placeholder="Select a Status"
-    >
-      <template #value="slotProps">
-        <div v-if="slotProps.value && slotProps.value.value">
-          <span :class="'product-badge status-' + slotProps.value.value">{{
-            slotProps.value.label
-          }}</span>
+  >
+    <div v-for="item of temp" class="p-field" :key="item">
+      <div v-if="item?.type === 'text'">
+        <label :for="item.label">{{ item.label }}</label>
+        <InputText
+          :id="item.label"
+          v-model="item.selected"
+          :placeholder="item.placeholder"
+          :required="item.require"
+        />
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >این فیلد الزامی است.</span
+        >
+      </div>
+      <div v-if="item?.type === 'password'">
+        <label :for="item.label">{{ item.label }}</label>
+        <Password
+          :id="item.label"
+          v-model="item.selected"
+          :placeholder="item.placeholder"
+          :required="item.require"
+        />
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >این فیلد الزامی است.</span
+        >
+      </div>
+      <div v-if="item?.type === 'number'">
+        <label :for="item.label">{{ item.label }}</label>
+        <InputNumber
+          :id="item.label"
+          v-model="item.selected"
+          :required="item.require"
+        />
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >این فیلد الزامی است.</span
+        >
+      </div>
+      <div v-if="item?.type === 'textarea'">
+        <label :for="item.label">{{ item.label }}</label>
+        <Textarea
+          :id="item.label"
+          v-model="item.selected"
+          :required="item.require"
+          rows="3"
+          cols="20"
+        />
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >این فیلد الزامی است.</span
+        >
+      </div>
+      <div v-if="item?.type === 'select'">
+        <label :for="item.label" class="p-mb-3">{{ item.label }}</label>
+        <Dropdown
+          :id="item.label"
+          v-model="item.selected"
+          :options="item.items"
+          optionLabel="label"
+          :placeholder="item.placeholder"
+        />
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >این فیلد الزامی است.</span
+        >
+      </div>
+      <div v-if="item?.type === 'multiselect'">
+        <label :for="item.label" class="p-mb-3">{{ item.label }}</label>
+        <MultiSelect
+          :id="item.label"
+          v-model="item.selected"
+          :options="item.items"
+          optionLabel="label"
+          :placeholder="item.placeholder"
+        />
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >این فیلد الزامی است.</span
+        >
+      </div>
+      <div v-if="item?.type === 'radiobutton'">
+        <label>{{ item.label }}</label>
+        <div v-for="radio in item.items" :key="radio">
+          <RadioButton
+            :id="radio.label"
+            :name="radio.label"
+            :value="radio"
+            v-model="item.selected"
+          />
+          <label :for="radio.label">{{ radio.label }}</label>
         </div>
-        <div v-else-if="slotProps.value && !slotProps.value.value">
-          <span
-            :class="'product-badge status-' + slotProps.value.toLowerCase()"
-            >{{ slotProps.value }}</span
-          >
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >انتخاب یک مورد الزامی است</span
+        >
+      </div>
+      <div v-if="item?.type === 'checkbox'">
+        <label>{{ item.label }}</label>
+        <div v-for="check in item.items" :key="check">
+          <Checkbox
+            :id="check.label"
+            :name="check.label"
+            :value="check"
+            v-model="item.selected"
+          />
+          <label :for="check.label">{{ check.label }}</label>
         </div>
-        <span v-else>
-          {{ slotProps.placeholder }}
-        </span>
-      </template>
-    </Dropdown>
-  </div>
-
-  <div class="p-field">
-    <label class="p-mb-3">Category</label>
-    <div class="p-formgrid p-grid">
-      <div class="p-field-radiobutton p-col-6">
-        <RadioButton
-          id="category1"
-          name="category"
-          value="Accessories"
-          v-model="product.category"
-        />
-        <label for="category1">Accessories</label>
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >انتخاب یک یا چند مورد الزامی است.</span
+        >
       </div>
-      <div class="p-field-radiobutton p-col-6">
-        <RadioButton
-          id="category2"
-          name="category"
-          value="Clothing"
-          v-model="product.category"
-        />
-        <label for="category2">Clothing</label>
-      </div>
-      <div class="p-field-radiobutton p-col-6">
-        <RadioButton
-          id="category3"
-          name="category"
-          value="Electronics"
-          v-model="product.category"
-        />
-        <label for="category3">Electronics</label>
-      </div>
-      <div class="p-field-radiobutton p-col-6">
-        <RadioButton
-          id="category4"
-          name="category"
-          value="Fitness"
-          v-model="product.category"
-        />
-        <label for="category4">Fitness</label>
+      <div v-if="item?.type === 'file'">
+        <label>{{ item.label }}</label>
+        <FileUpload
+          :name="item.name"
+          :url="item.url"
+          @upload="onUpload"
+          :multiple="(item as IFile).multiple"
+          :accept="item.accept"
+          chooseLabel="انتخاب فایل"
+          uploadLabel="آپلود"
+          cancelLabel="انصراف"
+          :maxFileSize="item.maxFileSize || 1000"
+        >
+          <template #empty>
+            <p>با کشیدن و رها کردن فایل را آپلود کنید.</p>
+          </template>
+        </FileUpload>
+        <span class="p-error" v-if="submitted && !item.selected && item.require"
+          >انتخاب فایل الزامی است</span
+        >
       </div>
     </div>
-  </div>
-
-  <div class="p-formgrid p-grid">
-    <div class="p-field p-col">
-      <label for="price">Price</label>
-      <InputNumber
-        id="price"
-        v-model="product.price"
-        mode="currency"
-        currency="USD"
-        locale="en-US"
-      />
-    </div>
-    <div class="p-field p-col">
-      <label for="quantity">Quantity</label>
-      <InputNumber id="quantity" v-model="product.quantity" integeronly />
-    </div>
-  </div>
-  <!-- <template #footer>
+    <template #footer>
       <Button
-        label="Cancel"
         icon="pi pi-times"
-        class="p-button-text"
-        @click="hideDialog"
+        class="p-button-rounded p-button-danger p-button-outlined"
+        @click="show = false"
       />
       <Button
-        label="Save"
         icon="pi pi-check"
-        class="p-button-text"
-        @click="saveProduct"
+        class="p-button-rounded p-button-outlined"
+        @click="formSubmit"
       />
-    </template> -->
-  <!-- </Dialog> -->
+    </template>
+  </Dialog>
+  <Button @click="show = true">show</Button>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from "vue";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
 import RadioButton from "primevue/radiobutton";
 import Dropdown from "primevue/dropdown";
+import MultiSelect from "primevue/multiselect";
+import Checkbox from "primevue/checkbox";
+import FileUpload from "primevue/fileupload";
+import Button from "primevue/button";
+import Password from "primevue/password";
 
-export default {
-  component: {
+interface IInputText {
+  label: string;
+  placeholder: string;
+  type: string;
+  require?: boolean;
+  selected: string;
+}
+interface IInputPassword {
+  label: string;
+  placeholder: string;
+  type: string;
+  require?: boolean;
+  selected: string;
+}
+
+interface IInputNumber {
+  label: string;
+  placeholder: string;
+  type: string;
+  require?: boolean;
+  selected: number;
+}
+
+interface ITextArea {
+  label: string;
+  placeholder: string;
+  type: string;
+  require?: boolean;
+  selected: string;
+}
+interface ISelect {
+  label: string;
+  placeholder: string;
+  type: string;
+  require?: boolean;
+  selected: {
+    value: string | boolean | number;
+    label: string;
+  };
+  items: [
+    {
+      value: string | boolean | number;
+      label: string;
+    }
+  ];
+}
+
+interface IMultiSelect {
+  label: string;
+  placeholder: string;
+  type: string;
+  require?: boolean;
+  selected: [
+    {
+      value: string | boolean | number;
+      label: string;
+    }
+  ];
+  items: [
+    {
+      value: string | boolean | number;
+      label: string;
+    }
+  ];
+}
+
+interface IRadioButton {
+  label: string;
+  type: string;
+  require?: boolean;
+  selected: {
+    value: string | boolean | number;
+    label: string;
+  };
+  items: [
+    {
+      value: string | boolean | number;
+      label: string;
+    }
+  ];
+}
+interface ICheckBox {
+  label: string;
+  type: string;
+  require?: boolean;
+  selected: {
+    value: string | boolean | number;
+    label: string;
+  };
+  items: [
+    {
+      value: string | boolean | number;
+      label: string;
+    }
+  ];
+}
+
+interface IFile {
+  name: string;
+  require?: boolean;
+  url: string;
+  type: string;
+  label: string;
+  maxFileSize: null;
+  multiple: boolean;
+  accept: string;
+}
+
+interface ITemp {
+  text?: IInputText;
+  password: IInputPassword;
+  number?: IInputNumber;
+  textarea?: ITextArea;
+  select?: ISelect;
+  multiselect?: IMultiSelect;
+  radiobutton?: IRadioButton;
+  checkbox?: ICheckBox;
+  file?: IFile;
+}
+
+type Data =
+  | IInputText["selected"]
+  | IInputNumber["selected"]
+  | ITextArea["selected"]
+  | ISelect["selected"]
+  | IMultiSelect["selected"]
+  | IRadioButton["selected"]
+  | ICheckBox["selected"];
+
+export default defineComponent({
+  components: {
     Dialog,
     InputText,
     InputNumber,
     Textarea,
     RadioButton,
     Dropdown,
+    MultiSelect,
+    Checkbox,
+    FileUpload,
+    Button,
+    Password,
+  },
+  props: {
+    model: {
+      type: Object as PropType<ITemp>,
+      default: () => ({}),
+    },
+    data: Object,
   },
   data() {
     return {
-      productDialog: true,
-      product: {},
+      values: {},
+      show: false,
+      temp: {} as ITemp,
+      submitted: false,
     };
   },
-};
+  mounted() {
+    this.temp = this.model;
+  },
+  methods: {
+    formSubmit() {
+      this.submitted = true;
+      const data: Record<string, Data> = {};
+      for (const key in this.temp) {
+        data[key] = (this.temp[key as keyof ITemp] as any)?.selected;
+      }
+      this.$emit("data", data);
+    },
+    onUpload() {
+      return false;
+    },
+  },
+});
 </script>
 
-<style></style>
+<style scoped>
+* {
+  direction: rtl;
+}
+.p-button {
+  width: 36px !important;
+}
+</style>
